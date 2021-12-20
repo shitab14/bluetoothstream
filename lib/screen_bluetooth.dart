@@ -81,10 +81,12 @@ class _BluetoothPageState extends State<BluetoothPage> {
   @override
   void dispose() {
     _connection?.dispose();
-    if (_streamSubscription != null)
+    if (_streamSubscription != null) {
       _streamSubscription?.cancel();
-    if (EasyLoading.isShow)
+    }
+    if (EasyLoading.isShow) {
       EasyLoading.dismiss();
+    }
 
     /// Value Notifiers
     _messageBuffer.dispose();
@@ -118,16 +120,14 @@ class _BluetoothPageState extends State<BluetoothPage> {
           _getBottomWave(),
 
           /// Body
-          Align(
-            alignment: Alignment.topCenter,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _getConnectedDeviceView(),
-                _getBluetoothPairedDeviceConnectView(),
-                _getDataView(),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _getConnectedDeviceView(),
+              _getBluetoothPairedDeviceConnectView(),
+              _getDataView(),
+            ],
           ),
 
           /// Discovering BT Devices
@@ -158,10 +158,10 @@ class _BluetoothPageState extends State<BluetoothPage> {
       centerTitle: true,
       toolbarHeight: 60,
       backgroundColor: Colors.white,
-      iconTheme: IconThemeData(
+      iconTheme: const IconThemeData(
         color: Colors.black,
       ),
-      title: FittedBox(
+      title: const FittedBox(
         fit: BoxFit.fitWidth,
         child: Text(
           _pageTitle,
@@ -252,144 +252,111 @@ class _BluetoothPageState extends State<BluetoothPage> {
     );
   }
 
-
   // BT Device Dropdown, Refresh Button, Connect Button
   Widget _getBluetoothPairedDeviceConnectView() {
     return Container(
       margin: const EdgeInsets.all(10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Flexible(
-            flex: 2,
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.only(left: 6, right: 6,),
-                child: PopupMenuButton<String>(
-                  tooltip: 'Select Bluetooth Device',
-                  initialValue: _btDropdownValue.value,
-                  onSelected: (String value) => _selectDevice(value),
-                  itemBuilder: (BuildContext context) {
-                    return _discoveryResults.value.skip(0).map((
-                        BluetoothDiscoveryResult choice) {
-                      return PopupMenuItem<String>(
-                        value: '${choice.device.name == null
-                            ? "BT Device"
-                            : choice.device.name.toString()} ${choice.device
-                            .address.isEmpty || choice.device.address == null
-                            ? ""
-                            : "[" + choice.device.address.toString() + "]"}',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                flex: 2,
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 6, right: 6,),
+                    child: PopupMenuButton<String>(
+                      tooltip: 'Select Bluetooth Device',
+                      initialValue: _btDropdownValue.value,
+                      onSelected: (String value) => _selectDevice(value),
+                      itemBuilder: (BuildContext context) {
+                        return _discoveryResults.value.skip(0).map((
+                            BluetoothDiscoveryResult choice) {
+                          return PopupMenuItem<String>(
+                            value: '${choice.device.name == null
+                                ? "BT Device"
+                                : choice.device.name.toString()} ${choice.device
+                                .address.isEmpty || choice.device.address == null
+                                ? ""
+                                : "[" + choice.device.address.toString() + "]"}',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                Flexible(
+                                  child: Text(
+                                    '${choice.device.name == null
+                                        ? "BT Device"
+                                        : choice.device.name.toString()} ${choice
+                                        .device.address.isEmpty ||
+                                        choice.device.address == null ? "" : "[" +
+                                        choice.device.address.toString() + "]"}',
+                                    overflow: TextOverflow.visible,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(
+                              color: AppColors.instance.blueBorderColor,
+                            )
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Flexible(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
                               child: Text(
-                                '${choice.device.name == null
-                                    ? "BT Device"
-                                    : choice.device.name.toString()} ${choice
-                                    .device.address.isEmpty ||
-                                    choice.device.address == null ? "" : "[" +
-                                    choice.device.address.toString() + "]"}',
-                                overflow: TextOverflow.visible,
-                                textAlign: TextAlign.left,
+                                _btDropdownValue.value,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.instance.blueBorderColor,
+                                  fontStyle: FontStyle.normal,
+                                ),
                               ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.blue,
+                              size: 20,
                             ),
                           ],
                         ),
-                      );
-                    }).toList();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: AppColors.instance.blueBorderColor,
-                        )
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _btDropdownValue.value,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.instance.blueBorderColor,
-                              fontStyle: FontStyle.normal,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                ),
-
-              ),
-            ),
-          ),
-          Flexible(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 6.0),
-                child: ElevatedButton(
-                  onPressed: _restartDiscovery,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(0.0),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6.0)),
-                  ),
-                  child: Ink(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.rectangle,
-                      borderRadius: BorderRadius.all(Radius.circular(5.0)),
-                      color: const Color(0xFF63B6EE),
-                    ),
-                    child: Container(
-                      height: 23,
-                      padding: const EdgeInsets.all(5),
-                      margin: const EdgeInsets.all(10),
-                      child: FittedBox(
-                        child: Text(
-                          '   Scan   ',
-                          style: TextStyle(color: Colors.white),
-                        ),
                       ),
+
                     ),
+
                   ),
                 ),
-              )
-          ),
-          ValueListenableBuilder(
-              valueListenable: _connectionStatusText,
-              builder: (BuildContext context, String value, Widget? child) {
-                return Flexible(
-                    flex: 1,
+              ),
+              Flexible(
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
                     child: ElevatedButton(
-                      onPressed: _connectDisconnectButtonPress,
+                      onPressed: _restartDiscovery,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.all(0.0),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6.0)),
                       ),
                       child: Ink(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.rectangle,
                           borderRadius: BorderRadius.all(Radius.circular(5.0)),
-                          color: (value ==
-                              AppConstants.CONNECTION_STATUS_CONNECTED) ? Color(
-                              0xFFD32F2F) : Color(0xFF61d800),
+                          color: const Color(0xFF63B6EE),
                         ),
                         child: Container(
                           height: 23,
@@ -397,22 +364,65 @@ class _BluetoothPageState extends State<BluetoothPage> {
                           margin: const EdgeInsets.all(10),
                           child: FittedBox(
                             child: Text(
-                              (value ==
-                                  AppConstants.CONNECTION_STATUS_CONNECTED)
-                                  ? "Disconnect"
-                                  : " Connect ",
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
+                              '   Scan   ',
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ),
                       ),
-                    )
-                );
-              }
-          ),
+                    ),
+                  )
+              ),
+              ValueListenableBuilder(
+                  valueListenable: _connectionStatusText,
+                  builder: (BuildContext context, String value, Widget? child) {
+                    return Flexible(
+                        flex: 1,
+                        child: ElevatedButton(
+                          onPressed: _connectDisconnectButtonPress,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(0.0),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6.0)),
+                          ),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                              color: (value ==
+                                  AppConstants.CONNECTION_STATUS_CONNECTED) ? Color(
+                                  0xFFD32F2F) : Color(0xFF61d800),
+                            ),
+                            child: Container(
+                              height: 23,
+                              padding: const EdgeInsets.all(5),
+                              margin: const EdgeInsets.all(10),
+                              child: FittedBox(
+                                child: Text(
+                                  (value ==
+                                      AppConstants.CONNECTION_STATUS_CONNECTED)
+                                      ? "Disconnect"
+                                      : " Connect ",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                    );
+                  }
+              ),
 
+            ],
+          ),
+          TextButton(
+            onPressed: _clearReading,
+            child: const Text(
+              'Clear All'
+            ),
+          )
         ],
       ),
     );
@@ -420,44 +430,43 @@ class _BluetoothPageState extends State<BluetoothPage> {
 
   // Shows the Cards with Sensor Values
   Widget _getDataView() {
-    return Padding(
-      padding: const EdgeInsets.all(15.0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(15.0,),
-        height: 300,
-        decoration: BoxDecoration(
-          shape: BoxShape.rectangle,
-          border: Border.all(color: AppColors.instance.blueBorderColor, width: 2),
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
-          // color: AppColors.instance.translucentWhite,
-          boxShadow: const [ BoxShadow(
-            color:  Color(0x508EC7D7),
-            blurRadius: 2,
-            spreadRadius: 1,
-            offset: Offset(0.0, 1.0), // shadow direction: bottom right
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0,),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(15.0,),
+          decoration: BoxDecoration(
+            shape: BoxShape.rectangle,
+            border: Border.all(color: AppColors.instance.blueBorderColor, width: 2),
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
+            // color: AppColors.instance.translucentWhite,
+            boxShadow: const [ BoxShadow(
+              color:  Color(0x508EC7D7),
+              blurRadius: 2,
+              spreadRadius: 1,
+              offset: Offset(0.0, 1.0), // shadow direction: bottom right
+            ),
+            ],
           ),
-          ],
-        ),
-        child: ValueListenableBuilder(
-            valueListenable: _messageBuffer,
-            builder: (BuildContext context, String? value,
-                Widget? child) {
-              // DebugUtil.instance.printLog(value);
-              String? parsedValue = (value != null) ? (value
-                  .isNotEmpty
-                  ? _parseBluetoothDataForUse(value)
-                  : '') : '';
-              return (value == null)
-                  ? Container()
-                  : Container(
-                child: SingleChildScrollView(
-                  child: Text(
-                      _messageBuffer.value.toString(),
-                  ),
-                ),
-              );
-            }
+          child: ValueListenableBuilder(
+              valueListenable: _messageBuffer,
+              builder: (BuildContext context, String? value,
+                  Widget? child) {
+                // DebugUtil.instance.printLog(value);
+                String? parsedValue = (value != null) ? (value
+                    .isNotEmpty
+                    ? _parseBluetoothDataForUse(value)
+                    : '') : '';
+                return (value == null)
+                    ? Container()
+                    : SingleChildScrollView(
+                      child: Text(
+                          _messageBuffer.value.toString(),
+                      ),
+                    );
+              }
+          ),
         ),
       ),
     );
@@ -626,50 +635,11 @@ class _BluetoothPageState extends State<BluetoothPage> {
     _connection?.close();
     _connectionStatusText.value = AppConstants.CONNECTION_STATUS_DISCONNECTED;
     _connectionStatusColor.value = Colors.red;
+    setState(() {});
   }
 
   void _onDataReceived(Uint8List data) {
-    // Allocate buffer for parsed data
-    int backspacesCounter = 0;
-    data.forEach((byte) {
-      if (byte == 8 || byte == 127) {
-        backspacesCounter++;
-      }
-    });
-    Uint8List buffer = Uint8List(data.length - backspacesCounter);
-    int bufferIndex = buffer.length;
-
-    // Apply backspace control character
-    backspacesCounter = 0;
-    for (int i = data.length - 1; i >= 0; i--) {
-      if (data[i] == 8 || data[i] == 127) {
-        backspacesCounter++;
-      } else {
-        if (backspacesCounter > 0) {
-          backspacesCounter--;
-        } else {
-          buffer[--bufferIndex] = data[i];
-        }
-      }
-    }
-
-    // Create message if there is new line character
-    String dataString = String.fromCharCodes(buffer);
-    int index = buffer.indexOf(0);
-
-    if (~index != 0) {
-      _messageBuffer.value = dataString.substring(index).toString();
-    } else {
-      if (_messageBuffer.value != null) {
-        _messageBuffer.value =
-        (backspacesCounter > 0
-            ? _messageBuffer.value!.substring(
-            0, _messageBuffer.value!.length - backspacesCounter)
-            : (_messageBuffer.value! + dataString)
-        ).split('\r\n')[0];
-      }
-    }
-    _messageBuffer.value = _messageBuffer.value.toString();
+    _messageBuffer.value = _messageBuffer.value.toString() +  String.fromCharCodes(data);
   }
 
   void _bluetoothToggle(bool value) {
@@ -726,8 +696,13 @@ class _BluetoothPageState extends State<BluetoothPage> {
       } else {
         return '';
       }
-    } else
+    } else {
       return '';
+    }
+  }
+
+  void _clearReading() {
+    _messageBuffer.value = '';
   }
 
 }

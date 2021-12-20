@@ -192,4 +192,14 @@ class CommonUtil {
     return SizedBox(height: spaceQuantity);
   }
 
+  String makeTimeParamTwoDigit(int n) {
+    if(n.toString().length == 2) {
+      return n.toString();
+    } else if(n.toString().length == 1){
+      return '0'+n.toString();
+    } else {
+      return '';
+    }
+  }
+
 }
