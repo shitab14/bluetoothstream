@@ -202,4 +202,11 @@ class CommonUtil {
     }
   }
 
+  String getDateStamp() {
+    return '(${CommonUtil.instance.makeTimeParamTwoDigit(DateTime.now().hour)}'
+        ':${CommonUtil.instance.makeTimeParamTwoDigit(DateTime.now().minute)}'
+        ':${CommonUtil.instance.makeTimeParamTwoDigit(DateTime.now().second)}'
+        ':${DateTime.now().millisecond + DateTime.now().microsecond}) ';
+  }
+
 }

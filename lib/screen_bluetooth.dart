@@ -14,7 +14,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'common/constants/constants_app.dart';
 import 'common/util/util_common.dart';
 
@@ -46,9 +45,8 @@ class _BluetoothPageState extends State<BluetoothPage> {
       [_emptyBtDevice]);
   StreamSubscription<BluetoothDiscoveryResult>? _streamSubscription;
   final ValueNotifier<bool> _isDiscovering = ValueNotifier(false);
-  final ValueNotifier<String> _btDropdownValue = ValueNotifier(
-      _SELECT_BLUETOOTH_DEVICE); // Shows the value of the selected dropdown option
-  String _selectedDeviceMacAddress = "";
+  final ValueNotifier<String> _btDropdownValue = ValueNotifier(_SELECT_BLUETOOTH_DEVICE); // Shows the value of the selected dropdown option
+  ValueNotifier<String> _selectedDeviceMacAddress = ValueNotifier("");
 
   // ValueNotifier<List<TankListItem>> _tankList = ValueNotifier(
   //     [
@@ -73,9 +71,8 @@ class _BluetoothPageState extends State<BluetoothPage> {
   @override
   void initState() {
     super.initState();
-    _presenter = BtScreenPresenter(context);
-    _setCurrentBluetoothState();
-    _startDiscovery();
+    _presenter = BtScreenPresenter(context, _setStateCall);
+    _restartDiscovery();
   }
 
   @override
@@ -99,7 +96,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
     _connectionStatusColor.dispose();
     // _tankList.dispose();
     _tankDropdownValue.dispose();
-
+    _selectedDeviceMacAddress.dispose();
     _tankIdController.dispose();
     super.dispose();
   }
@@ -522,169 +519,9 @@ class _BluetoothPageState extends State<BluetoothPage> {
   }
 
   /// Functions
-  void _restartDiscovery() {
-    _setCurrentBluetoothState();
-    _startDiscovery();
-  }
-
-  void _startDiscovery() async {
-    Future.delayed(const Duration(milliseconds: 650), () async {
-      if (_bluetoothEnabled.value) {
-        var status = await Permission.locationWhenInUse.request();
-        if (status.isPermanentlyDenied || status.isDenied || status.isDenied) {
-          CommonUtil.instance.showToast(
-              context,
-              'Provide Location Permission to Search for Bluetooth Devices');
-        } else {
-          _discoveryResults.value.clear();
-          _discoveryResults.value.add(_emptyBtDevice);
-          _isDiscovering.value = true;
-          setState(() {});
-          // onStartLoadingBluetoothDevices();
-          _streamSubscription =
-              FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
-                _discoveryResults.value.add(r);
-                DebugUtil.instance.printLog(msg :
-                "Name:${r.device.name.toString()} \nType:${r.device.type
-                    .toString()} \nAddress:${r.device.address
-                    .toString()} \nisBonded: ${r.device.isBonded
-                    .toString()} \nisConnected: ${r.device.isConnected
-                    .toString()} ");
-              });
-          _streamSubscription?.onDone(() {
-            // onStopLoading();
-            _isDiscovering.value = false;
-            setState(() {});
-          });
-        }
-      } else {
-        CommonUtil.instance.showToast(
-            context, 'Enable Bluetooth to Search for Devices');
-      }
-    });
-  }
-
   void _selectDevice(String value) {
-    DebugUtil.instance.printLog(msg : "Selected: " + value);
-    _btDropdownValue.value = value;
-    _selectedDeviceMacAddress =
-        RegExp(r'\[(.*?)\]').stringMatch(value).toString().replaceAll('[', '')
-            .replaceAll(']', '')
-            .trim();
-    DebugUtil.instance.printLog(msg :
-    "Selected MacAddress: " + _selectedDeviceMacAddress);
-
-    setState(() {});
-  }
-
-  bool _setCurrentBluetoothState() {
-    // Get current state
-    FlutterBluetoothSerial.instance.state.then((state) {
-      _bluetoothState.value = state;
-      _bluetoothEnabled.value = _bluetoothState.value.isEnabled;
-    });
-    return _bluetoothEnabled.value;
-  }
-
-  void _connectDisconnectButtonPress() {
-    (_connectionStatusText.value == AppConstants.CONNECTION_STATUS_CONNECTED &&
-        _connection != null && _connection!.isConnected)
-        ? _disconnectSelectedDevice()
-        : _connectToSelectedDevice();
-  }
-
-  void _connectToSelectedDevice() {
-    if (CommonUtil.instance.isRedundantClick(DateTime.now())) {}
-    else {
-      if (_selectedDeviceMacAddress == 'null' ||
-          _selectedDeviceMacAddress.isEmpty) {
-        CommonUtil.instance.showToast(context, 'Select a Bluetooth device');
-      }
-      else {
-        DebugUtil.instance.printLog(msg : 'Connecting');
-        // CommonUtil.instance.showToast(context, 'Connecting');
-        _connectionStatusText.value = AppConstants.CONNECTION_STATUS_CONNECTING;
-        _connectionStatusColor.value = Colors.orange;
-        setState(() {});
-
-        BluetoothConnection.toAddress(_selectedDeviceMacAddress).then((
-            connection) {
-          DebugUtil.instance.printLog(msg : 'Connected to the device');
-          // CommonUtil.instance.showToast(context, CONNECTION_STATUS_CONNECTED);
-          _connectionStatusText.value =
-              AppConstants.CONNECTION_STATUS_CONNECTED;
-          _connectionStatusColor.value = Colors.green;
-
-          _connection = connection;
-          setState(() {});
-
-          _connection?.input?.listen(_onDataReceived).onDone(() {});
-
-        }).catchError((error) {
-          DebugUtil.instance.printLog(msg : 'Cannot connect, exception occurred');
-          DebugUtil.instance.printLog(msg : 'Error: ' + error.toString());
-          _connectionStatusText.value = AppConstants.CONNECTION_STATUS_FAILED;
-          _connectionStatusColor.value = Colors.red;
-          setState(() {});
-        });
-      }
-    }
-  }
-
-  void _disconnectSelectedDevice() {
-    _connection?.close();
-    _connectionStatusText.value = AppConstants.CONNECTION_STATUS_DISCONNECTED;
-    _connectionStatusColor.value = Colors.red;
-    setState(() {});
-  }
-
-  void _onDataReceived(Uint8List data) {
-    _messageBuffer.value = _messageBuffer.value.toString() +  String.fromCharCodes(data);
-  }
-
-  void _bluetoothToggle(bool value) {
-    if (!CommonUtil.instance.isRedundantClick(DateTime.now())) {
-      future() async {
-        try {
-          if (value) {
-            _bluetoothEnabled.value =
-            (await FlutterBluetoothSerial.instance.requestEnable())!;
-          } else {
-            _bluetoothEnabled.value =
-            (await FlutterBluetoothSerial.instance.requestDisable())!;
-          }
-        } catch (e) {
-          DebugUtil.instance.printLog(msg : e);
-        }
-      }
-      future().then((_) {
-        Future.delayed(const Duration(milliseconds: 650), () {
-          _setCurrentBluetoothState();
-          DebugUtil.instance.printLog(msg : _bluetoothEnabled.value);
-          _startDiscovery();
-        });
-      });
-    }
-  }
-
-  String? _parseBluetoothDataForUse(String? value) {
-    RegExp regExp = RegExp(
-        r'T:.{1,5},EC:.{1,5},pH:.{1,5}.,TDS:.{1,5},Sal:.{1,5},');
-    try {
-      if (value != null) {
-        return regExp
-            .allMatches(value)
-            .last
-            .group(0) == null ? '' : regExp
-            .allMatches(value)
-            .last
-            .group(0);
-      } else {
-        return '';
-      }
-    } catch (e) {
-      return '';
-    }
+    _presenter.selectDevice(value: value, selectedDeviceMacAddress: _selectedDeviceMacAddress, btDropdownValue: _btDropdownValue,);
+    // setState(() {});
   }
 
   String _getValueFromBTDataLine(String? value, int index) {
@@ -702,7 +539,102 @@ class _BluetoothPageState extends State<BluetoothPage> {
   }
 
   void _clearReading() {
-    _messageBuffer.value = '';
+    _presenter.clearReading(_messageBuffer);
+  }
+
+  void _bluetoothToggle(bool value) {
+    _presenter.toggleBluetooth(
+      value: value,
+      bluetoothEnabled: _bluetoothEnabled,
+      bluetoothState: _bluetoothState,
+      emptyBtDevice: _emptyBtDevice,
+      isDiscovering: _isDiscovering,
+      discoveryResults: _discoveryResults,
+      streamSubscription: _streamSubscription,
+    );
+    setState(() {});
+  }
+
+  bool _setCurrentBluetoothState() {
+    // Get current state
+    return _presenter.currentBluetoothStateEnabled(bluetoothEnabled: _bluetoothEnabled, bluetoothState: _bluetoothState);
+  }
+
+  void _restartDiscovery() {
+    _setCurrentBluetoothState();
+    _startDiscovery();
+  }
+
+  void _startDiscovery() async {
+    _presenter.startDiscovery(
+      bluetoothEnabled: _bluetoothEnabled,
+      isDiscovering: _isDiscovering,
+      streamSubscription: _streamSubscription,
+      discoveryResults: _discoveryResults,
+      emptyBtDevice: _emptyBtDevice,
+    );
+  }
+
+  void _connectDisconnectButtonPress() {
+    (_connectionStatusText.value == AppConstants.CONNECTION_STATUS_CONNECTED &&
+        _connection != null && _connection!.isConnected)
+        ? _disconnectSelectedDevice()
+        : _connectToSelectedDevice();
+  }
+
+  void _connectToSelectedDevice() {
+    if (!CommonUtil.instance.isRedundantClick(DateTime.now())) {
+      if (_selectedDeviceMacAddress == 'null' ||
+          _selectedDeviceMacAddress.value.isEmpty) {
+        CommonUtil.instance.showToast(context, 'Select a Bluetooth device');
+      }
+      else {
+        DebugUtil.instance.printLog(msg : 'Connecting');
+        _connectionStatusText.value = AppConstants.CONNECTION_STATUS_CONNECTING;
+        _connectionStatusColor.value = Colors.orange;
+        setState(() {});
+
+        BluetoothConnection.toAddress(_selectedDeviceMacAddress.value).then((
+            connection) {
+          DebugUtil.instance.printLog(msg : 'Connected to the device');
+          _connectionStatusText.value =
+              AppConstants.CONNECTION_STATUS_CONNECTED;
+          _connectionStatusColor.value = Colors.green;
+
+          _connection = connection;
+          setState(() {});
+
+          _connection?.input?.listen(_onDataReceived).onDone(() {});
+
+        }).catchError((error) {
+          DebugUtil.instance.printLog(msg : 'Cannot connect, exception occurred');
+          DebugUtil.instance.printLog(msg : 'Error: ' + error.toString());
+          _connectionStatusText.value = AppConstants.CONNECTION_STATUS_FAILED;
+          _connectionStatusColor.value = Colors.red;
+          CommonUtil.instance.showToast(context, 'Please make sure you have enabled Bluetooth');
+          setState(() {});
+        });
+      }
+    }
+  }
+
+  void _disconnectSelectedDevice() {
+    _connection?.close();
+    _connectionStatusText.value = AppConstants.CONNECTION_STATUS_DISCONNECTED;
+    _connectionStatusColor.value = Colors.red;
+    setState(() {});
+  }
+
+  void _onDataReceived(Uint8List data) {
+    _presenter.onDataReceived(data: data, messageBuffer: _messageBuffer);
+  }
+
+  String? _parseBluetoothDataForUse(String? value) {
+    _presenter.parseBluetoothDataForUse(value);
+  }
+
+  _setStateCall() {
+    setState(() {});
   }
 
 }
