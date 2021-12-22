@@ -128,10 +128,7 @@ class BtScreenPresenter {
         return regExp
             .allMatches(value)
             .last
-            .group(0) == null ? '' : regExp
-            .allMatches(value)
-            .last
-            .group(0);
+            .group(0) ?? '';
       } else {
         return '';
       }

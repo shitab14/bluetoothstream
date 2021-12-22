@@ -46,14 +46,8 @@ class _BluetoothPageState extends State<BluetoothPage> {
   StreamSubscription<BluetoothDiscoveryResult>? _streamSubscription;
   final ValueNotifier<bool> _isDiscovering = ValueNotifier(false);
   final ValueNotifier<String> _btDropdownValue = ValueNotifier(_SELECT_BLUETOOTH_DEVICE); // Shows the value of the selected dropdown option
-  ValueNotifier<String> _selectedDeviceMacAddress = ValueNotifier("");
+  final ValueNotifier<String> _selectedDeviceMacAddress = ValueNotifier("");
 
-  // ValueNotifier<List<TankListItem>> _tankList = ValueNotifier(
-  //     [
-  //       // TankListItem(tankName: 'Tanki Tank', tankId: 007, tankCapacity: 69, tankLengthInch: 96, tankWidthInch: 90, tankDepthInch: 60, tankDescription: 'komu na'),
-  //       // TankListItem(tankName: 'Tank Tanki', tankId: 008, tankCapacity: 69, tankLengthInch: 96, tankWidthInch: 90, tankDepthInch: 60, tankDescription: 'komu na'),
-  //     ]
-  // );
   final ValueNotifier<String> _tankDropdownValue = ValueNotifier(
       'Select Tank'); // Shows the value of the selected dropdown option
 
@@ -451,10 +445,10 @@ class _BluetoothPageState extends State<BluetoothPage> {
               builder: (BuildContext context, String? value,
                   Widget? child) {
                 // DebugUtil.instance.printLog(value);
-                String? parsedValue = (value != null) ? (value
+                /*String? parsedValue = (value != null) ? (value
                     .isNotEmpty
                     ? _parseBluetoothDataForUse(value)
-                    : '') : '';
+                    : '') : '';*/
                 return (value == null)
                     ? Container()
                     : SingleChildScrollView(
@@ -519,25 +513,6 @@ class _BluetoothPageState extends State<BluetoothPage> {
   }
 
   /// Functions
-  void _selectDevice(String value) {
-    _presenter.selectDevice(value: value, selectedDeviceMacAddress: _selectedDeviceMacAddress, btDropdownValue: _btDropdownValue,);
-    // setState(() {});
-  }
-
-  String _getValueFromBTDataLine(String? value, int index) {
-    if (value != null) {
-      if (','
-          .allMatches(value)
-          .length > index && value != '') {
-        return value.split(",")[index].replaceAll(RegExp('[a-zA-Z:]'), '');
-      } else {
-        return '';
-      }
-    } else {
-      return '';
-    }
-  }
-
   void _clearReading() {
     _presenter.clearReading(_messageBuffer);
   }
@@ -555,11 +530,12 @@ class _BluetoothPageState extends State<BluetoothPage> {
     setState(() {});
   }
 
+  // Get current state
   bool _setCurrentBluetoothState() {
-    // Get current state
     return _presenter.currentBluetoothStateEnabled(bluetoothEnabled: _bluetoothEnabled, bluetoothState: _bluetoothState);
   }
 
+  // Bluetooth Discovery
   void _restartDiscovery() {
     _setCurrentBluetoothState();
     _startDiscovery();
@@ -575,6 +551,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
     );
   }
 
+  // Connect/Disconnect
   void _connectDisconnectButtonPress() {
     (_connectionStatusText.value == AppConstants.CONNECTION_STATUS_CONNECTED &&
         _connection != null && _connection!.isConnected)
@@ -584,7 +561,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
 
   void _connectToSelectedDevice() {
     if (!CommonUtil.instance.isRedundantClick(DateTime.now())) {
-      if (_selectedDeviceMacAddress == 'null' ||
+      if (_selectedDeviceMacAddress.value == 'null' ||
           _selectedDeviceMacAddress.value.isEmpty) {
         CommonUtil.instance.showToast(context, 'Select a Bluetooth device');
       }
@@ -625,14 +602,22 @@ class _BluetoothPageState extends State<BluetoothPage> {
     setState(() {});
   }
 
+  // Select Bluetooth Device
+  void _selectDevice(String value) {
+    _presenter.selectDevice(value: value, selectedDeviceMacAddress: _selectedDeviceMacAddress, btDropdownValue: _btDropdownValue,);
+  }
+
+  // On Data Received
   void _onDataReceived(Uint8List data) {
     _presenter.onDataReceived(data: data, messageBuffer: _messageBuffer);
   }
 
+  // Parsing Data for usage
   String? _parseBluetoothDataForUse(String? value) {
     _presenter.parseBluetoothDataForUse(value);
   }
 
+  // to set state from Presenter
   _setStateCall() {
     setState(() {});
   }
